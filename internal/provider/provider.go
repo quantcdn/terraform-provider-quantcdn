@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	quant "github.com/quantcdn/quant-go"
 )
 
 func init() {
@@ -26,11 +27,45 @@ func init() {
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		p := &schema.Provider{
-			DataSourcesMap: map[string]*schema.Resource{
-				"scaffolding_data_source": dataSourceScaffolding(),
+			Schema: map[string]*schema.Schema{
+				"client_id": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("QUANT_CLIENT_ID", nil),
+					Description: "A registered Quant client name",
+				},
+
+				"project": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("QUANT_PROJECT", nil),
+					Description: "A registered Quant project name",
+				},
+
+				"api_token": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("QUANT_TOKEN", nil),
+					Description: "The API token for operations",
+				},
+
+				"api_hostname": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("QUANT_HOSTNAME", "https://api.quantcdn.io"),
+				},
+
+				"api_basepath": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("QUANT_BASEPATH", "/v1"),
+				},
 			},
+
+			DataSourcesMap: map[string]*schema.Resource{},
+
 			ResourcesMap: map[string]*schema.Resource{
-				"scaffolding_resource": resourceScaffolding(),
+				"quant_form": resourceQuantForm(),
 			},
 		}
 
@@ -40,18 +75,22 @@ func New(version string) func() *schema.Provider {
 	}
 }
 
-type apiClient struct {
-	// Add whatever fields, client or connection info, etc. here
-	// you would need to setup to communicate with the upstream
-	// API.
-}
-
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Setup a User-Agent for your API client (replace the provider name for yours):
-		// userAgent := p.UserAgent("terraform-provider-scaffolding", version)
-		// TODO: myClient.UserAgent = userAgent
+	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		client := quant.NewClient(
+			d.Get("api_token").(string),
+			d.Get("client_id").(string),
+			d.Get("project").(string),
+		)
 
-		return &apiClient{}, nil
+		if apiHost, ok := d.GetOk("api_hostname"); ok {
+			client.Host = apiHost.(string)
+		}
+
+		if apiBase, ok := d.GetOk("api_base"); ok {
+			client.Base = apiBase.(string)
+		}
+
+		return client, nil
 	}
 }
