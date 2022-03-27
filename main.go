@@ -36,7 +36,7 @@ func main() {
 		Debug: debugMode,
 
 		// TODO: update this string with the full name of your provider as used in your configs
-		ProviderAddr: "registry.terraform.io/quantcdn/quantcdn",
+		ProviderAddr: "registry.terraform.io/github/quantcdn",
 
 		ProviderFunc: provider.New(version),
 	}
