@@ -8,15 +8,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestQuantForm(t *testing.T) {
+func TestForm(t *testing.T) {
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testQuantForm(),
+				Config: testForm(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("quant_form.foo", "url", "/content/duis"),
+					resource.TestCheckResourceAttr("quantcdn_form.foo", "url", "/content/duis"),
 				),
 				ExpectNonEmptyPlan: true,
 			},
@@ -24,9 +24,9 @@ func TestQuantForm(t *testing.T) {
 	})
 }
 
-func testQuantForm() string {
+func testForm() string {
 	return fmt.Sprintf(`
-resource "quant_form" "foo" {
+resource "quantcdn_form" "foo" {
 	url = "/content/duis"
 	enabled = true
 	success_message = "Great success %s"
