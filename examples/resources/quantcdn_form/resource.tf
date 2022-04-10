@@ -1,7 +1,7 @@
-resource "quant_form" "example" {
+resource "quantcdn_form" "example" {
   url                      = "/content/duis"
   enabled                  = true
-  success_message          = "Great success %s"
+  success_message          = "Great success"
   failure_message          = "Such errors"
   mandatory_fields_message = "Not all errors"
   mandatory_fields         = ["test"]

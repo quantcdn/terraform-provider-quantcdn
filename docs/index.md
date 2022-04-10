@@ -13,7 +13,7 @@ description: |-
 ## Example Usage
 
 ```terraform
-provider "quant" {
+provider "quantcdn" {
   # example configuration here
   client_id = "quant-tf-client"
   project   = "Quant TF"
