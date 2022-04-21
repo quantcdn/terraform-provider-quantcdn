@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -251,13 +252,15 @@ func resourceQuantFormRead(ctx context.Context, d *schema.ResourceData, meta int
 	emailConfig["enabled"] = f.Config.Notifications.Email.Enabled
 	emailConfig["text_only"] = f.Config.Notifications.Email.Options.TextOnly
 	emailConfig["include_results"] = f.Config.Notifications.Email.Options.IncludeResults
-	d.Set("notification_email", append(notificationEmail, emailConfig))
+	notificationEmail = append(notificationEmail, emailConfig)
+	d.Set("notification_email", notificationEmail)
 
 	notificationSlack := make([]map[string]interface{}, 0)
 	slackConfig := make(map[string]interface{})
 	slackConfig["webhook"] = f.Config.Notifications.Slack.Webhook
 	slackConfig["enabled"] = f.Config.Notifications.Slack.Enabled
-	d.Set("notification_slack", append(notificationSlack, slackConfig))
+	notificationSlack = append(notificationSlack, slackConfig)
+	d.Set("notification_slack", notificationSlack)
 
 	return nil
 }
@@ -268,6 +271,10 @@ func resourceQuantFormUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	_, err := client.UpdateForm(form)
 
 	if err != nil {
+		if strings.Contains(err.Error(), "Published version already has md5") {
+			return nil
+		}
+
 		return diag.Errorf("error updating form %s", err)
 	}
 
