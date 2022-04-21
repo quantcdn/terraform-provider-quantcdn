@@ -52,7 +52,7 @@ func resourceQuantForm() *schema.Resource {
 			},
 			"mandatory_fields": {
 				Description: "List of field names that are required",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -60,7 +60,7 @@ func resourceQuantForm() *schema.Resource {
 			},
 			"honeypot_fields": {
 				Description: "List of field names that are treated as honeypot fields",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -68,7 +68,7 @@ func resourceQuantForm() *schema.Resource {
 			},
 			"remove_fields": {
 				Description: "List of field names to remove from submissions",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -141,39 +141,51 @@ func resourceQuantForm() *schema.Resource {
 }
 
 func getQuantFormFromResource(d *schema.ResourceData) quant.Form {
-	var email quant.FormNotificationEmail
-	var slack quant.FormNotificationSlack
-	var mandatoryFields []string
-	var honeypotFields []string
-	var removeFields []string
+	form := quant.Form{
+		Url:     d.Get("url").(string),
+		Enabled: d.Get("enabled").(bool),
+		Config: quant.FormConfig{
+			Target:                d.Get("url").(string),
+			HoneypotFields:        []string{},
+			MandatoryFields:       []string{},
+			RemoveFields:          []string{},
+			SuccessMessage:        d.Get("success_message").(string),
+			ErrorMessageGeneric:   d.Get("failure_message").(string),
+			ErrorMessageMandatory: d.Get("mandatory_fields_message").(string),
+			Notifications: quant.FormNotification{
+				Email: quant.FormNotificationEmail{},
+				Slack: quant.FormNotificationSlack{},
+			},
+		},
+	}
 
 	if mandatoryFieldsRaw, ok := d.GetOk("mandatory_fields"); ok {
-		for _, mf := range mandatoryFieldsRaw.([]interface{}) {
-			mandatoryFields = append(mandatoryFields, mf.(string))
+		for _, mf := range mandatoryFieldsRaw.(*schema.Set).List() {
+			form.Config.MandatoryFields = append(form.Config.MandatoryFields, mf.(string))
 		}
 	}
 
 	if honeypotFieldsRaw, ok := d.GetOk("honeypot_fields"); ok {
-		for _, hf := range honeypotFieldsRaw.([]interface{}) {
-			honeypotFields = append(honeypotFields, hf.(string))
+		for _, hf := range honeypotFieldsRaw.(*schema.Set).List() {
+			form.Config.HoneypotFields = append(form.Config.HoneypotFields, hf.(string))
 		}
 	}
 
 	if removeFieldsRaw, ok := d.GetOk("remove_fields"); ok {
-		for _, rf := range removeFieldsRaw.([]interface{}) {
-			removeFields = append(removeFields, rf.(string))
+		for _, rf := range removeFieldsRaw.(*schema.Set).List() {
+			form.Config.RemoveFields = append(form.Config.RemoveFields, rf.(string))
 		}
 	}
 
 	if v, ok := d.GetOk("notification_email"); ok {
 		for _, e := range v.(*schema.Set).List() {
 			emailConfig := e.(map[string]interface{})
-			email.To = emailConfig["to"].(string)
-			email.Cc = emailConfig["cc"].(string)
-			email.Subject = emailConfig["subject"].(string)
-			email.Enabled = emailConfig["enabled"].(bool)
-			email.Options.TextOnly = emailConfig["text_only"].(bool)
-			email.Options.IncludeResults = emailConfig["include_results"].(bool)
+			form.Config.Notifications.Email.To = emailConfig["to"].(string)
+			form.Config.Notifications.Email.Cc = emailConfig["cc"].(string)
+			form.Config.Notifications.Email.Subject = emailConfig["subject"].(string)
+			form.Config.Notifications.Email.Enabled = emailConfig["enabled"].(bool)
+			form.Config.Notifications.Email.Options.TextOnly = emailConfig["text_only"].(bool)
+			form.Config.Notifications.Email.Options.IncludeResults = emailConfig["include_results"].(bool)
 			break
 		}
 	}
@@ -181,29 +193,13 @@ func getQuantFormFromResource(d *schema.ResourceData) quant.Form {
 	if s, ok := d.GetOk("notification_slack"); ok {
 		for _, e := range s.(*schema.Set).List() {
 			slackConfig := e.(map[string]interface{})
-			slack.Webhook = slackConfig["webhook"].(string)
-			slack.Enabled = slackConfig["enabled"].(bool)
+			form.Config.Notifications.Slack.Webhook = slackConfig["webhook"].(string)
+			form.Config.Notifications.Slack.Enabled = slackConfig["enabled"].(bool)
 			break
 		}
 	}
 
-	return quant.Form{
-		Url:     d.Get("url").(string),
-		Enabled: d.Get("enabled").(bool),
-		Config: quant.FormConfig{
-			Target:                d.Get("url").(string),
-			HoneypotFields:        honeypotFields,
-			MandatoryFields:       mandatoryFields,
-			RemoveFields:          removeFields,
-			SuccessMessage:        d.Get("success_message").(string),
-			ErrorMessageGeneric:   d.Get("failure_message").(string),
-			ErrorMessageMandatory: d.Get("mandatory_fields_message").(string),
-			Notifications: quant.FormNotification{
-				Email: email,
-				Slack: slack,
-			},
-		},
-	}
+	return form
 }
 
 func resourceQuantFormCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

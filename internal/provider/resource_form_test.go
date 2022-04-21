@@ -32,8 +32,7 @@ resource "quantcdn_form" "foo" {
 	success_message = "Great success %s"
 	failure_message = "Such errors"
 	mandatory_fields_message = "Not all errors"
-	mandatory_fields = ["test"]
-	honeypot_fields = ["honeypot"]
+	mandatory_fields = ["test", "update"]
 	remove_fields = ["email"]
 	notification_email {
 		to = "test@test.com"
