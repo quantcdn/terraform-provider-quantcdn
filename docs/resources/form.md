@@ -49,13 +49,13 @@ resource "quantcdn_form" "example" {
 
 - `enabled` (Boolean)
 - `failure_message` (String) Text to display when the form fails to submit correctly
-- `honeypot_fields` (List of String) List of field names that are treated as honeypot fields
+- `honeypot_fields` (Set of String) List of field names that are treated as honeypot fields
 - `id` (String) The ID of this resource.
-- `mandatory_fields` (List of String) List of field names that are required
+- `mandatory_fields` (Set of String) List of field names that are required
 - `mandatory_fields_message` (String) Text to display when mandatory fields are missing from the submission
 - `notification_email` (Block Set, Max: 1) Email notification configuration (see [below for nested schema](#nestedblock--notification_email))
 - `notification_slack` (Block Set, Max: 1) Slack notification configuration (see [below for nested schema](#nestedblock--notification_slack))
-- `remove_fields` (List of String) List of field names to remove from submissions
+- `remove_fields` (Set of String) List of field names to remove from submissions
 - `success_message` (String) Text to display when form submission is successful
 
 <a id="nestedblock--notification_email"></a>
